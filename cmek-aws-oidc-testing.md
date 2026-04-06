@@ -301,6 +301,39 @@ aws iam add-client-id-to-open-id-connect-provider \
 
 ### 8b. Create the second role and inline policy
 
+Pick **one** of the trust snippets below. The JWT `sub` claim is always `account:<scalr-account-name>` (see the table at the top).
+
+**Option A — single Scalr account**
+
+Set the account **name** (same string Scalr uses in `sub`, without the `account:` prefix), or skip the export and edit the JSON to a literal such as `"account:prod"`.
+
+```bash
+export SCALR_ACCOUNT_NAME="your-scalr-account-name"
+```
+
+```bash
+cat > /tmp/trust-policy-oidc-b.json << EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Principal": { "Federated": "${OIDC_PROVIDER_ARN}" },
+    "Action": "sts:AssumeRoleWithWebIdentity",
+    "Condition": {
+      "StringEquals": {
+        "${SCALR_HOSTNAME}:aud": "scalr-cmek-aws-oidc-test-b",
+        "${SCALR_HOSTNAME}:sub": "account:${SCALR_ACCOUNT_NAME}"
+      }
+    }
+  }]
+}
+EOF
+```
+
+**Option B — multiple Scalr accounts**
+
+Same pattern as section 5: a JSON array under `StringEquals` for `sub` (logical OR across accounts).
+
 ```bash
 cat > /tmp/trust-policy-oidc-b.json << EOF
 {
@@ -322,7 +355,11 @@ cat > /tmp/trust-policy-oidc-b.json << EOF
   }]
 }
 EOF
+```
 
+Then create the role (same for both options):
+
+```bash
 aws iam create-role \
   --role-name scalr-cmek-oidc-test-role-b \
   --assume-role-policy-document file:///tmp/trust-policy-oidc-b.json
@@ -423,7 +460,51 @@ If you completed section 8, run the same `put-role-policy` for `scalr-cmek-oidc-
 
 ---
 
-## 10. Quick negative checks (optional)
+## 10. KMS key material rotation (on-demand and status)
+
+Use the key’s **primary** (home) region (`$AWS_REGION`). **Automatic key rotation** (e.g. yearly) runs on AWS’s schedule; to add a **new backing material version immediately**, use **on-demand rotation**. Scalr’s configured key ARN stays `.../key/mrk-...`; existing ciphertext remains decryptable.
+
+**Permissions:** caller needs `kms:RotateKeyOnDemand`, `kms:ListKeyRotations`, and `kms:GetKeyRotationStatus` as appropriate. **Multi-Region keys:** call on-demand rotation only on the **primary** key.
+
+### Trigger on-demand rotation now
+
+```bash
+aws kms rotate-key-on-demand \
+  --region "$AWS_REGION" \
+  --key-id "$KMS_KEY_ID"
+```
+
+### List rotation events (verify `ON_DEMAND` / `AUTOMATIC`)
+
+```bash
+aws kms list-key-rotations \
+  --region "$AWS_REGION" \
+  --key-id "$KMS_KEY_ID"
+```
+
+A row with **`RotationType`: `ON_DEMAND`** and **`KeyMaterialState`: `CURRENT`** means that version is active. If **`Truncated`** is true, paginate with `--starting-token` / `--max-items` per the CLI help.
+
+### Automatic rotation toggle (yearly schedule, not “rotate now”)
+
+```bash
+aws kms get-key-rotation-status \
+  --region "$AWS_REGION" \
+  --key-id "$KMS_KEY_ID"
+```
+
+To enable the periodic schedule (separate from on-demand):
+
+```bash
+aws kms enable-key-rotation \
+  --region "$AWS_REGION" \
+  --key-id "$KMS_KEY_ID"
+```
+
+**Limits:** on-demand rotation is capped per key (see [AWS KMS quotas](https://docs.aws.amazon.com/kms/latest/developerguide/requests-per-second-quota.html)); symmetric encryption CMKs only (not asymmetric / HMAC / unsupported custom stores). Details: [On-demand key rotation](https://docs.aws.amazon.com/kms/latest/developerguide/rotating-keys-on-demand.html).
+
+---
+
+## 11. Quick negative checks (optional)
 
 - Wrong `aws-audience` in Scalr: STS should deny (`AssumeRoleWithWebIdentity` fails).
 - Wrong Scalr account name in trust `sub`: deny.
