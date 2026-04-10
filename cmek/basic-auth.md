@@ -1,5 +1,22 @@
 # GCP KMS test setups for Scalr CMEK (BYOK)
 
+## Table of contents
+
+- [Variables (you set these first)](#variables-you-set-these-first)
+- [Prerequisite](#prerequisite)
+- [Setup 1: One KMS key + new SA (access to this key only)](#setup-1-one-kms-key--new-sa-access-to-this-key-only)
+- [Setup 2: Second KMS key + SA that can use **both** keys](#setup-2-second-kms-key--sa-that-can-use-both-keys)
+- [Cleanup (GCP): remove entities separately](#cleanup-gcp-remove-entities-separately)
+- [Part 2: AWS KMS (Scalr CMEK BYOK)](#part-2-aws-kms-scalr-cmek-byok)
+- [One-time: IAM user for API tests](#one-time-iam-user-for-api-tests)
+- [Multi-region keys (happy path + rotation)](#multi-region-keys-happy-path--rotation)
+- [Single-region key (negative: not MRK)](#single-region-key-negative-not-mrk)
+- [Alias ARN (negative: alias not allowed)](#alias-arn-negative-alias-not-allowed)
+- [Malformed ARN (negative)](#malformed-arn-negative)
+- [Wrong credentials / inaccessible key (negative 400)](#wrong-credentials--inaccessible-key-negative-400)
+- [Checklist → configuration mapping](#checklist--configuration-mapping)
+- [Cleanup (optional)](#cleanup-optional)
+
 This doc walks through **example resource names** you can recreate in **your** GCP project and AWS account. Replace placeholders and run sections in order.
 
 **Variable names** match `cmek-gcp-impersonation.md` and `cmek-gcp-oidc.md` for GCP, and `cmek-aws-impersonation.md` for AWS MRKs, so one shell block can be reused across those guides.
@@ -17,24 +34,6 @@ This doc walks through **example resource names** you can recreate in **your** G
 Run **Setup 1** before **Setup 2** (Setup 2 grants the second SA on both keys). Both setups use the **same** key ring (`CMEK_GCP_KEY_RING`), like the impersonation doc.
 
 If you already created the ring or crypto keys from **`cmek-gcp-impersonation.md`** with the same `CMEK_GCP_KEY_RING` / `CMEK_GCP_KEY_ID` / `CMEK_GCP_KEY_ID_2`, skip the duplicate `gcloud kms keyrings create` / `gcloud kms keys create` lines and continue from the SA / IAM binding steps (or point exports at different ids for an isolated BYOK project).
-
-## Table of contents
-
-- [Variables (you set these first)](#variables-you-set-these-first)
-- [Prerequisite](#prerequisite)
-- [Setup 1: One KMS key + new SA (access to this key only)](#setup-1-one-kms-key--new-sa-access-to-this-key-only)
-- [Setup 2: Second KMS key + SA that can use **both** keys](#setup-2-second-kms-key--sa-that-can-use-both-keys)
-- [Cleanup (GCP): remove entities separately](#cleanup-gcp-remove-entities-separately)
-- [Part 2: AWS KMS (Scalr CMEK BYOK)](#part-2-aws-kms-scalr-cmek-byok)
-- [One-time: IAM user for API tests](#one-time-iam-user-for-api-tests)
-- [Multi-region keys (happy path + rotation)](#multi-region-keys-happy-path--rotation)
-- [Single-region key (negative: not MRK)](#single-region-key-negative-not-mrk)
-- [Alias ARN (negative: alias not allowed)](#alias-arn-negative-alias-not-allowed)
-- [Malformed ARN (negative)](#malformed-arn-negative)
-- [Wrong credentials / inaccessible key (negative 400)](#wrong-credentials--inaccessible-key-negative-400)
-- [JSON:API attributes (reference)](#jsonapi-attributes-reference)
-- [Checklist → configuration mapping](#checklist--configuration-mapping)
-- [Cleanup (optional)](#cleanup-optional)
 
 ---
 
@@ -465,19 +464,6 @@ Send a string that is not `arn:aws:kms:...:key/...`, for example `not-an-arn` or
 - Remove **`kms:Encrypt` / `kms:Decrypt`** from the user policy for that key and retry.
 
 Expect **400** from Scalr with the generic “Could not access the specified key…” message.
-
----
-
-## JSON:API attributes (reference)
-
-| Attribute | Example |
-|-----------|---------|
-| `provider-type` | `2` (`aws_kms` enum in API) |
-| `aws-kms-key-arn` | `${CMEK_KMS_KEY_ARN}` (your MRK from AWS) |
-| `aws-access-key` | IAM user access key id |
-| `aws-secret-access-key` | IAM user secret |
-
-Confirm `provider-type` in your client schema (`tacolib` / OpenAPI); use the same value as in component tests if unsure.
 
 ---
 

@@ -1,9 +1,5 @@
 # CMEK edge cases (test setup)
 
-Companion to `cmek-aws-impersonation.md`, `cmek-gcp-impersonation.md`, and `cmek-kms-basics.md`. Use the same shell variable names as those guides so you can reuse exports.
-
-Sections are **AWS** first, then **GCP** (IAM bindings, disable/enable versions, schedule/cancel version destruction, asymmetric negative-test key, regional keys, a second OIDC provider in the same workload identity pool).
-
 ## Table of contents
 
 - [Single-region key in `us-east-1` (not multi-Region)](#single-region-key-in-us-east-1-not-multi-region)
@@ -16,7 +12,10 @@ Sections are **AWS** first, then **GCP** (IAM bindings, disable/enable versions,
 - [GCP Cloud KMS (regional location, not `global`)](#gcp-cloud-kms-regional-location-not-global)
 - [GCP Workload Identity: second runtime service account (Option B)](#gcp-workload-identity-second-runtime-service-account-option-b)
 - [GCP Workload Identity: second OIDC provider (same pool)](#gcp-workload-identity-second-oidc-provider-same-pool)
-- [Reference](#reference)
+
+Companion to `cmek-aws-impersonation.md`, `cmek-gcp-impersonation.md`, and `cmek-kms-basics.md`. Use the same shell variable names as those guides so you can reuse exports.
+
+Sections are **AWS** first, then **GCP** (IAM bindings, disable/enable versions, schedule/cancel version destruction, asymmetric negative-test key, regional keys, a second OIDC provider in the same workload identity pool).
 
 ## Single-region key in `us-east-1` (not multi-Region)
 
@@ -708,10 +707,3 @@ gcloud iam workload-identity-pools providers delete "${CMEK_GCP_PROVIDER_ID_2}" 
   --workload-identity-pool="${CMEK_GCP_POOL_ID}" \
   --quiet
 ```
-
----
-
-## Reference
-
-- **AWS:** Key ARN shape in `taco/app/encryption/service/cmek_providers/aws.py` (`KEY_NAME_RE`, `us-east-1` / `us-east-2`).
-- **GCP:** `google-kms-key-name` must use **`locations/global`** for Scalr; see `taco/app/encryption/apis/validators.py` (`validate_google_kms_key_name`). Wrong key type / algorithm handling in `taco/database/encryption.py` (`CRYPTO_SCHEME_MISMATCH`, etc.).

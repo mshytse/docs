@@ -1,5 +1,18 @@
 # AWS CMEK OIDC (test setup)
 
+## Table of contents
+
+- [1 · OIDC IdP](#1--oidc-idp)
+- [2 · MRK](#2--mrk)
+- [3 · Primary role](#3--primary-role)
+- [4 · Key policy](#4--key-policy)
+- [5 · Scalr](#5--scalr)
+- [6 · Second role](#6--second-role)
+- [7 · Second MRK](#7--second-mrk)
+- [8 · Rotation](#8--rotation)
+- [9 · Negatives](#9--negatives)
+- [Cleanup · Tear down](#cleanup--tear-down)
+
 Uses the same shell vars as `cmek-aws-impersonation.md` where shared: `CMEK_AWS_ACCOUNT_ID`, `CMEK_KMS_REGION`. OIDC MRK and provider use `CMEK_OIDC_*` so impersonation `CMEK_KMS_KEY_*` / `CMEK_MRK_KEY_2_*` stay untouched.
 
 JWT (trust policy): `iss` = `https://<host>` · `aud` = Scalr `aws-audience` · `sub` = `account:<scalr-account-name>` (name, not UUID).
@@ -36,20 +49,6 @@ export CMEK_OIDC_AUDIENCE_B="scalr-cmek-aws-oidc-test-b"
 export CMEK_SCALR_ACCOUNT_NAME="your-scalr-account-name"
 export CMEK_OIDC_THUMBPRINT="<40-char-hex>"
 ```
-
-## Table of contents
-
-- [1 · OIDC IdP](#1--oidc-idp)
-- [2 · MRK](#2--mrk)
-- [3 · Primary role](#3--primary-role)
-- [4 · Key policy](#4--key-policy)
-- [5 · Scalr](#5--scalr)
-- [6 · Second role](#6--second-role)
-- [7 · Second MRK](#7--second-mrk)
-- [8 · Rotation](#8--rotation)
-- [9 · Negatives](#9--negatives)
-- [Cleanup · Tear down](#cleanup--tear-down)
-- [Reference · Links](#reference--links)
 
 ---
 
@@ -484,10 +483,3 @@ aws kms schedule-key-deletion --region "${CMEK_KMS_REGION}" --key-id "${CMEK_OID
 ```bash
 rm -f /tmp/kms-key-policy.json /tmp/trust-policy-oidc.json /tmp/trust-policy-oidc-b.json /tmp/kms-role-policy.json
 ```
-
----
-
-## Reference · Links
-
-- `aws-audience`: OpenAPI internal spec `taco/openapi/openapi-internal.yml`
-- Claims: `taco/app/encryption/service/oidc.py` (`issue_server_token`)

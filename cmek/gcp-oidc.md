@@ -1,11 +1,5 @@
 # GCP CMEK OIDC / Workload Identity (test setup)
 
-Scalr issues an OIDC ID token (`taco/app/encryption/service/oidc.py`: `iss`, `aud`, `sub`, `scalr_account_id`, `scalr_account_name`). GCP **Workload Identity Federation** trusts that issuer. The JWT audience Scalr uses for GCP is:
-
-`//iam.googleapis.com/{google-workload-provider-name}`
-
-(resource path: `projects/{PROJECT_NUMBER}/locations/global/workloadIdentityPools/{POOL}/providers/{PROVIDER}` — see `taco/app/encryption/v1/factory.py` and `taco/database/encryption.py`.)
-
 ## Table of contents
 
 - [Scalr API vs GCP setup (read this first)](#scalr-api-vs-gcp-setup-read-this-first)
@@ -16,7 +10,12 @@ Scalr issues an OIDC ID token (`taco/app/encryption/service/oidc.py`: `iss`, `au
 - [5 · Scalr API (`google-credentials-type` = `oidc`)](#5--scalr-api-google-credentials-type--oidc)
 - [6 · Optional: full second stack for side-by-side A/B tests](#6--optional-full-second-stack-for-side-by-side-ab-tests)
 - [Cleanup · Tear down](#cleanup--tear-down)
-- [Reference](#reference)
+
+Scalr issues an OIDC ID token (`taco/app/encryption/service/oidc.py`: `iss`, `aud`, `sub`, `scalr_account_id`, `scalr_account_name`). GCP **Workload Identity Federation** trusts that issuer. The JWT audience Scalr uses for GCP is:
+
+`//iam.googleapis.com/{google-workload-provider-name}`
+
+(resource path: `projects/{PROJECT_NUMBER}/locations/global/workloadIdentityPools/{POOL}/providers/{PROVIDER}` — see `taco/app/encryption/v1/factory.py` and `taco/database/encryption.py`.)
 
 ## Scalr API vs GCP setup (read this first)
 
@@ -308,11 +307,3 @@ gcloud kms keys versions destroy 1 \
 ```
 
 When the version is **`DESTROYED`**, delete the version and key per [Delete Cloud KMS resources](https://cloud.google.com/kms/docs/delete-kms-resources). If `gcloud kms keys delete` is missing, run `gcloud components update` or use `gcloud beta kms keys delete` with the same flags.
-
----
-
-## Reference
-
-- `taco/app/encryption/resources.py` — CMEK attributes (`oidc`: SA email optional).
-- `taco/app/encryption/apis/validators.py` — provider format, workload provider required for `oidc`.
-- `taco/database/encryption.py` — `GCPCredentialsType.oidc` (`service_account_impersonation_url` only if SA email set).

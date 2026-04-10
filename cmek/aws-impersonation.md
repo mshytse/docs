@@ -1,5 +1,15 @@
 # AWS CMEK impersonation (test setup)
 
+## Table of contents
+
+- [1 · MRKs](#1--mrks)
+- [2 · Trust](#2--trust)
+- [3 · Roles](#3--roles)
+- [4 · IAM KMS](#4--iam-kms)
+- [5 · ARNs](#5--arns)
+- [6 · Scalr](#6--scalr)
+- [Cleanup · Tear down](#cleanup--tear-down)
+
 Set env vars once (example values):
 
 | Variable | Meaning |
@@ -23,16 +33,6 @@ export CMEK_ROLE_NAME=scalr-cmek-test
 export CMEK_ROLE_NAME_SECONDARY=scalr-cmek-test-secondary
 export CMEK_KMS_REGION=us-east-1
 ```
-
-## Table of contents
-
-- [1 · MRKs](#1--mrks)
-- [2 · Trust](#2--trust)
-- [3 · Roles](#3--roles)
-- [4 · IAM KMS](#4--iam-kms)
-- [5 · ARNs](#5--arns)
-- [6 · Scalr](#6--scalr)
-- [Cleanup · Tear down](#cleanup--tear-down)
 
 ---
 

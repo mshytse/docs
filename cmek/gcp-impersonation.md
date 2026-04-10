@@ -1,5 +1,22 @@
 # GCP CMEK impersonation (test setup)
 
+## Table of contents
+
+- [Part A · First customer SA + first key](#part-a--first-customer-sa--first-key)
+- [1 · Key ring + crypto key](#1--key-ring--crypto-key)
+- [2 · Customer SA + KMS](#2--customer-sa--kms)
+- [3 · Scalr → customer SA (impersonation)](#3--scalr--customer-sa-impersonation)
+- [4 · Scalr](#4--scalr)
+- [5 · Encrypt / decrypt (smoke test, data-access audit logs)](#5--encrypt--decrypt-smoke-test-data-access-audit-logs)
+- [Part B · Second key + second customer SA (both SAs on both keys)](#part-b--second-key--second-customer-sa-both-sas-on-both-keys)
+- [6 · Second crypto key](#6--second-crypto-key)
+- [7 · Second customer SA + KMS (both SAs on both keys)](#7--second-customer-sa--kms-both-sas-on-both-keys)
+- [8 · Scalr → second customer SA (impersonation)](#8--scalr--second-customer-sa-impersonation)
+- [9 · Scalr (second CMEK profile)](#9--scalr-second-cmek-profile)
+- [10 · Encrypt / decrypt (second key; smoke test)](#10--encrypt--decrypt-second-key-smoke-test)
+- [Cleanup · Part B (second key + second SA)](#cleanup--part-b-second-key--second-sa)
+- [Cleanup · Part A (first key + first SA)](#cleanup--part-a-first-key--first-sa)
+
 Scalr calls KMS as your **customer service account** by impersonation. Scalr's GCP identity needs **`roles/iam.serviceAccountTokenCreator`** on that SA. The customer SA needs **`roles/cloudkms.cryptoKeyEncrypterDecrypter`** (or tighter) on the key.
 
 On GKE **Workload Identity**, instance metadata may show **`email`** as `{project-id}.svc.id.goog` (the workload pool namespace), not a `...@…iam.gserviceaccount.com`. For IAM bindings, use the **principal** or **Google service account** below, not that synthetic value.
@@ -49,23 +66,6 @@ export CMEK_SCALR_PREVIEW_WI_SUBJECT_NAMESPACE="your-preview-namespace"
 export CMEK_GCP_KMS_KEY_NAME="projects/${CMEK_GCP_PROJECT}/locations/global/keyRings/${CMEK_GCP_KEY_RING}/cryptoKeys/${CMEK_GCP_KEY_ID}"
 export CMEK_GCP_KMS_KEY_NAME_2="projects/${CMEK_GCP_PROJECT}/locations/global/keyRings/${CMEK_GCP_KEY_RING}/cryptoKeys/${CMEK_GCP_KEY_ID_2}"
 ```
-
-## Table of contents
-
-- [Part A · First customer SA + first key](#part-a--first-customer-sa--first-key)
-- [1 · Key ring + crypto key](#1--key-ring--crypto-key)
-- [2 · Customer SA + KMS](#2--customer-sa--kms)
-- [3 · Scalr → customer SA (impersonation)](#3--scalr--customer-sa-impersonation)
-- [4 · Scalr](#4--scalr)
-- [5 · Encrypt / decrypt (smoke test, data-access audit logs)](#5--encrypt--decrypt-smoke-test-data-access-audit-logs)
-- [Part B · Second key + second customer SA (both SAs on both keys)](#part-b--second-key--second-customer-sa-both-sas-on-both-keys)
-- [6 · Second crypto key](#6--second-crypto-key)
-- [7 · Second customer SA + KMS (both SAs on both keys)](#7--second-customer-sa--kms-both-sas-on-both-keys)
-- [8 · Scalr → second customer SA (impersonation)](#8--scalr--second-customer-sa-impersonation)
-- [9 · Scalr (second CMEK profile)](#9--scalr-second-cmek-profile)
-- [10 · Encrypt / decrypt (second key; smoke test)](#10--encrypt--decrypt-second-key-smoke-test)
-- [Cleanup · Part B (second key + second SA)](#cleanup--part-b-second-key--second-sa)
-- [Cleanup · Part A (first key + first SA)](#cleanup--part-a-first-key--first-sa)
 
 ---
 
